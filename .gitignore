@@ -13,3 +13,5 @@ data/*.json
 
 # Other
 .DS_Store
+#api key
+.env
