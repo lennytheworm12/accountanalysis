@@ -2,16 +2,34 @@ import requests
 from urllib.parse import quote
 from dotenv import load_dotenv
 import os
+import time
+from datetime import datetime
 
 load_dotenv()
 
 API_KEY = os.getenv('RIOT_API_KEY')
 
-def make_api_request(url):
+def get_epoch_time(year, month, day):
+    dt = datetime(year, month, day)
+    return int(dt.timestamp())
+
+
+#time our requests so we dont get errors
+def rate_limited_request(url, headers, params=None):
+    response = requests.get(url, headers=headers, params=params)
+    if response.status_code == 429:  # Too Many Requests
+        retry_after = int(response.headers.get('Retry-After', 1))
+        print(f"Rate limit hit, retrying after {retry_after} seconds...")
+        time.sleep(retry_after)
+        return rate_limited_request(url, headers, params)
+    return response
+
+
+def make_api_request(url, params=None):
     headers = {
         'X-Riot-Token': API_KEY
     }
-    response = requests.get(url, headers=headers)
+    response = rate_limited_request(url, headers, params)
     
     if response.status_code != 200:
         print(f"Error: {response.status_code} - {response.json()}")
@@ -30,21 +48,27 @@ def get_summoner_data_puuid(puuid):
 
     return make_api_request(url)
 
+#440 for flex type ranked
+def get_match_history(puuid, start_time=None, end_time=None, queue=None, match_type=None, start=0, count=100):
+    url = f'https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids'
 
-def get_match_history(puuid, start_time=None, end_time=None, queue=None, match_type=None, start=0, count=20):
-    url = f'https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start={start}&count={count}'
     
-    if start_time:
-        url += f'&startTime={start_time}'
-    if end_time:
-        url += f'&endTime={end_time}'
-    if queue:
-        url += f'&queue={queue}'
-    if match_type:
-        url += f'&type={match_type}'
+    params = {
+        'start': start,
+        'count': count,
+        'startTime': start_time,
+        'endTime': end_time,
+        'queue': queue,
+        'type': match_type
+    }
     
-    return make_api_request(url)
-
+    params = {k: v for k, v in params.items() if v is not None}
+    #k being key and v being value 
+    # for each key and value in params if the value is not none
+    # then add to this new dict
+    
+    return make_api_request(url, params = params)
+#return a list of match ids
 
 def get_match_data(match_id):
     url = f'https://americas.api.riotgames.com/lol/match/v5/matches/{match_id}'
