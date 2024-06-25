@@ -2,9 +2,8 @@ import json
 import pandas as pd
 from sqlalchemy import create_engine, text,MetaData, Table
 from scripts.get_summoner import *
-from database.database_setup import *
+from database.database_setup import engine
 
-engine = create_engine('sqlite:///league_ranks.db')
 
 def create_dataframe_from_match_data(match_data):
     matches = []
@@ -52,7 +51,7 @@ def add_match_to_table(match_id):
         data_frame = create_dataframe_from_match_data(match_data)
         
         # Save to SQL
-        save_to_sql(data_frame)
+        save_to_sql(data_frame, 'matches')
 
     except Exception as e:
         print(f"Error processing match {match_id}: {e}")
@@ -68,11 +67,15 @@ def add_match_history_to_table(match_history):
             print(f"Skipping match {match_id} due to error: {e}")
     return 0
 
+"""create data processing scripts for player stat table"""
+
+
+
 
 
 # Function to save DataFrame to SQL database
 
-def save_to_sql(df, table_name='matches'):
+def save_to_sql(df, table_name):
     try:
         print("DataFrame to be saved to SQL:")
         print(df)
@@ -87,3 +90,5 @@ def clear_db():
     with engine.connect() as connection:
         connection.execute(matches.delete())
         """
+
+

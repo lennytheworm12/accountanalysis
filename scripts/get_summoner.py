@@ -48,6 +48,7 @@ def get_summoner_data_puuid(puuid):
 
     return make_api_request(url)
 
+
 #440 for flex type ranked
 def get_match_history(puuid, start_time=None, end_time=None, queue=None, match_type=None, start=0, count=100):
     url = f'https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids'
@@ -70,6 +71,7 @@ def get_match_history(puuid, start_time=None, end_time=None, queue=None, match_t
     return make_api_request(url, params = params)
 #return a list of match ids
 
+
 def get_match_data(match_id):
     url = f'https://americas.api.riotgames.com/lol/match/v5/matches/{match_id}'
 
@@ -82,6 +84,7 @@ def get_match_timeline(match_id):
     return make_api_request(url)
 
 
+#summoner id is id from get summoner data
 def get_queue_data(summoner_id):
     url = f'https://na1.api.riotgames.com/lol/league/v4/entries/by-summoner/{summoner_id}'
 

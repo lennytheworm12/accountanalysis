@@ -1,7 +1,14 @@
-from sqlalchemy import create_engine, Column, String, Integer, Boolean, MetaData, Table, PrimaryKeyConstraint
+from sqlalchemy import (create_engine, Column, String, Integer, Float,
+                         Boolean, MetaData, Table, PrimaryKeyConstraint, JSON)
 from sqlalchemy.ext.declarative import declarative_base
+import os
+
+if not os.path.exists('database/databases'):
+    os.makedirs('database/databases')
 
 Base = declarative_base()
+
+
 
 class Match(Base):
     __tablename__ = 'matches'
@@ -25,9 +32,34 @@ class Match(Base):
         PrimaryKeyConstraint('match_id', 'participant_id'),
     )
 
-def clear_db():
+
+class PlayerStats(Base):
+    __tablename__ = 'player_stats'
+    player_id = Column(String, primary_key=True)  # Unique identifier for each player
+    #unique player id causes one row per player because can only have 1 player entry
+    player_name = Column(String)
+    flex_winrate = Column(Float)
+    flex_average_kills = Column(Float)
+    flex_average_deaths = Column(Float)
+    flex_average_assists = Column(Float)
+    flex_champion_stats = Column(JSON)  # JSON field to store per-champion stats
+    solo_duo_winrate = Column(Float)
+    solo_duo_average_kills = Column(Float)
+    solo_duo_average_deaths = Column(Float)
+    solo_duo_average_assists = Column(Float)
+    solo_duo_champion_stats = Column(JSON)  # JSON field to store per-champion stats
+
+
+
+
+def clear_db(table_name):
+    # Reflect the table from the database
+    metadata = MetaData()
+    table = Table(table_name, metadata, autoload_with=engine)
+    
     # Drop the table if it exists
-    Match.__table__.drop(engine)
+    table.drop(engine)
+    
     # Recreate the table
     Base.metadata.create_all(engine)
 

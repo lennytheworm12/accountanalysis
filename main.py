@@ -16,17 +16,17 @@ def main():
     #print(puuid)
     print('\n')
     summoner_data = (get_summoner_data_puuid(puuid))
-    #print(summoner_data)
+    print(summoner_data)
     start_time = get_epoch_time(2024, 5, 15)
     end_time = get_epoch_time(2024, 6, 24)
     queue = 440
     match_type = 'ranked'
-
+    table_name = 'matches'
     match_history = get_match_history(puuid, start_time=start_time, end_time=end_time, queue=queue, match_type=match_type)
 
-    clear_db()
+    clear_db(table_name)
     add_match_history_to_table(match_history)
-    #add_match_history_to_table(match_history)
+    pprint(get_queue_data(summoner_data['id']))
 
     app.run#(debug=True) #debug mode on will paste in db twice
 
