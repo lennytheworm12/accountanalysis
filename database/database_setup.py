@@ -15,7 +15,7 @@ class Match(Base):
     match_id = Column(String, primary_key=True)
     participant_id = Column(Integer, primary_key=True)
     game_mode = Column(String)
-    game_version = Column(String)  # Add this line
+    game_version = Column(String)
     summoner_name = Column(String)
     summoner_id = Column(String)
     champion = Column(String)
@@ -27,6 +27,7 @@ class Match(Base):
     total_damage_dealt = Column(Integer)
     total_heal = Column(Integer)
     vision_score = Column(Integer)
+    queue_id = Column(Integer)  # Add this line
 
     __table_args__ = (
         PrimaryKeyConstraint('match_id', 'participant_id'),
