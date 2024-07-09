@@ -65,5 +65,5 @@ def clear_db(table_name):
     Base.metadata.create_all(engine)
 
 # Create an engine and metadata
-engine = create_engine('sqlite:///league_ranks.db')
+engine = create_engine('sqlite:///database/databases/league_ranks.db')
 Base.metadata.create_all(engine)

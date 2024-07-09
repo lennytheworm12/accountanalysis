@@ -37,6 +37,7 @@ def create_dataframe_from_match_data(match_data):
     df.drop_duplicates(subset=['match_id', 'participant_id'], inplace=True)
     return df
 
+
 def add_match_to_table(match_id):
     try:
         # Fetch match data and create DataFrame
@@ -44,7 +45,7 @@ def add_match_to_table(match_id):
         data_frame = create_dataframe_from_match_data(match_data)
         
         # Save to SQL
-        save_to_sql(data_frame, 'matches')
+        save_to_database(data_frame, 'matches')
 
     except Exception as e:
         print(f"Error processing match {match_id}: {e}")
@@ -60,73 +61,28 @@ def add_match_history_to_table(match_history):
             print(f"Skipping match {match_id} due to error: {e}")
     return 0
 
+
 """create data processing scripts for player stat table"""
 
 
-
-# Function to check if the data already exists 
-def data_exists(record_id, table_name, id_column, participant_id=None):
-    with engine.connect() as connection:
-        if participant_id is not None:
-            query = text(f"SELECT 1 FROM {table_name} WHERE {id_column} = :record_id AND participant_id = :participant_id LIMIT 1")
-            result = connection.execute(query, {'record_id': record_id, 'participant_id': participant_id}).fetchone()
-        else:
-            query = text(f"SELECT 1 FROM {table_name} WHERE {id_column} = :record_id LIMIT 1")
-            result = connection.execute(query, {'record_id': record_id}).fetchone()
-        return result is not None
-#function append stats in for cases like adding
-def append_record(row, table_name):
-    row_df = pd.DataFrame([row])
-    row_df.to_sql(table_name, con=engine, if_exists='append', index=False)
-
-
-def update_player_stats(row, table_name):
-    with engine.connect() as connection:
-        query = text(f"""
-            UPDATE {table_name}
-            SET player_name = :player_name,
-                flex_winrate = :flex_winrate,
-                flex_average_kills = :flex_average_kills,
-                flex_average_deaths = :flex_average_deaths,
-                flex_average_assists = :flex_average_assists,
-                flex_champion_stats = :flex_champion_stats,
-                solo_duo_winrate = :solo_duo_winrate,
-                solo_duo_average_kills = :solo_duo_average_kills,
-                solo_duo_average_deaths = :solo_duo_average_deaths,
-                solo_duo_average_assists = :solo_duo_average_assists,
-                solo_duo_champion_stats = :solo_duo_champion_stats
-            WHERE player_id = :player_id
-        """)
-        connection.execute(query, **row.to_dict())
-
-
-# Function to save DataFrame to SQL database
-def save_to_sql(df, table_name):
-    for _, row in df.iterrows():
+def save_to_database(df, table_name):
+    try:
+        existing_data = pd.read_sql_table(table_name, con=engine)
+        
         if table_name == 'player_stats':
-            #state variables just to make things cleaner
-            record_id = row['player_id']
-            id_column = 'player_id'
-            update_function = update_player_stats
+            updated_data = pd.concat([existing_data, df]).drop_duplicates(subset=['player_id'], keep='last')
+        else:  # assuming it's for matches
+            updated_data = pd.concat([existing_data, df]).drop_duplicates(subset=['match_id', 'participant_id'], keep='last')
+        
+        #update the data to the database by 
+        updated_data.to_sql(table_name, con=engine, if_exists='replace', index=False)
+        print(f"Successfully updated {table_name} table.")
+    
+    except Exception as e:
+        print(f"Error saving to database: {e}")
 
-            # Check if the record already exists in the table
-            if data_exists(record_id, table_name, id_column):
-                # Update existing record
-                update_function(row, table_name)
-            else:
-                # Append new record
-                append_record(row, table_name)
-        else:
-            #this else logic is used for match data appending
-            #we still have to check for dupes 
-            record_id = row['match_id']
-            id_column = 'match_id'
-            participant_id = row['participant_id']
-
-            if not data_exists(record_id, table_name, id_column, participant_id):
-                append_record(row, table_name)
 """
-def save_to_sql(df, table_name):
+def save_to_database(df, table_name):
     try:
         print("DataFrame to be saved to SQL:")
         print(df)
